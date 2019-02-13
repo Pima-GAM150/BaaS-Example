@@ -21,6 +21,14 @@ public class LoadLevel : MonoBehaviour {
 		}
 	}
 
+	public void LoadNext() {
+		LoadAsync( SceneManager.GetActiveScene().buildIndex + 1 );
+	}
+
+	public void Reload() {
+		LoadAsync( SceneManager.GetActiveScene().buildIndex );
+	}
+
 	public void LoadAsyncFromEvent( int levelToLoad ) {
 		LoadAsync( levelToLoad );
 	}
@@ -32,6 +40,10 @@ public class LoadLevel : MonoBehaviour {
 		loadOp.allowSceneActivation = loadImmediately;
 
 		_currentlyLoadingLevel = levelToLoad;
+	}
+
+	public void LoadLastSavedLevel() {
+		LoadAsync( Backend.manager.lastLevelPlayed );
 	}
 
 	void NotifyStats( int nextLevel ) {

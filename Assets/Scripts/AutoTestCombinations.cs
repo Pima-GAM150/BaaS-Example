@@ -17,7 +17,6 @@ public class AutoTestCombinations : MonoBehaviour
 			manager.CheckForPatterns();
 
 			if( manager.won ) {
-				print( "Found correct pattern!" );
 				return;
 			}
 		}

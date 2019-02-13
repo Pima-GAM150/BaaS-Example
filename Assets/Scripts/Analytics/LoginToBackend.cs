@@ -36,38 +36,45 @@ public class LoginToBackend : MonoBehaviour {
 
 	Builder spinner;
 
+	// generate a GameSparks registration request and send it, awaiting a response
 	public void Register( string displayName, string username, string password ) {
-		if( username == "" || password == "" || displayLabel.text == "" ) return;
+		if( username == "" || password == "" || displayLabel.text == "" ) return; // don't bother if the user hasn't filled in necessary info
 
+		// make sure the two passwords match
 		if( CheckPasswordsMatch() ) {
-			print("Sending registration response... ");
+
+			// show a visual effect to indicate we're waiting for the backend
+			ShowSpinner();
+
+			// note how the event request and the SetEventKey methods return a LogEventRequest, so you can 'chain' functions off each other
 			new RegistrationRequest().SetDisplayName( displayName ).SetUserName( username ).SetPassword( password ).Send( RegisterResponse );
 		}
 	}
-	public void Register() { Register( displayLabel.text, usernameLabel.text, pwdLabel.text ); }
+	public void Register() { Register( displayLabel.text, usernameLabel.text, pwdLabel.text ); } // simple override to be called by UI events
 
 	public void RegisterResponse( RegistrationResponse response ) {
 		if( !response.HasErrors ) {
 
-			Backend.manager.displayName = response.DisplayName;
+			Backend.manager.displayName = response.DisplayName; // cache the user's display name for easy reference
 
 			LogToConsole( "Player " + response.DisplayName + " created!", successColor );
+
+			// we just made a new player with no saved data, so just get started fresh
 			if( levelLoader ) levelLoader.Load( firstLevel );
 		}
 		else {
 			LogToConsole( "Error Authenticating Player: " + response.Errors.JSON, failureColor );
 		}
+
+		spinner.animator.SetBool( "Toggle", false );
 	}
 
+	// these methods are very similar to the registration request
 	public void Login( string username, string password ) {
 		if( username == "" || password == "" ) return;
 
-		spinner = Instantiate<Builder>( spinnerPrefab );
-		spinner.transform.SetParent( spinnerParent );
-		spinner.transform.position = Vector3.zero;
+		ShowSpinner();
 		
-		// spinner.animator.SetBool( "Toggle", true );
-
 		new AuthenticationRequest().SetUserName( username ).SetPassword( password ).Send( LoginResponse );
 	}
 	public void Login() { Login( usernameLabel.text, pwdLabel.text ); }
@@ -79,11 +86,11 @@ public class LoginToBackend : MonoBehaviour {
 
 			LogToConsole( "Welcome, " + response.DisplayName + "!", successColor );
 
-			if( levelLoader ) FindLastLevel();
+			FindLastLevel();
 		}
 		else {			
 
-			print("Login response had errors: " + response.Errors.JSON );
+			// check what's wrong if the login response has errors
 			if( response.Errors.JSON.Contains( errorUnrecognized ) ) {
 				LogToConsole( "Unrecognized username or password.  Register?", failureColor );
 				animator.SetBool( "Register", true );
@@ -92,6 +99,7 @@ public class LoginToBackend : MonoBehaviour {
 				LogToConsole( "No network access.  Online features disabled.", failureColor );
 			}
 			else {
+				// report unrecognized errors directly to the user
 				LogToConsole( "Couldn't log in.  Reason: " + response.Errors.JSON, failureColor );
 			}
 		}
@@ -101,23 +109,35 @@ public class LoginToBackend : MonoBehaviour {
 
 	void FindLastLevel() {
 		// generate request for last level on server and load it
+		// note how we have to define the anonymous method before we use it, so it looks like the logic is backwards here
 		Action<int[]> onFetchedListFromServer = list => {
 			int levelToLoad = firstLevel;
 			if( list != null ) {
 				levelToLoad = list[0] + LoadLevel.levelOffset;
 			}
 
-			levelLoader.Load( levelToLoad );
+			Backend.manager.lastLevelPlayed = levelToLoad; // cache it for reference
+			levelLoader.Load( firstLevel ); // load whichever level is first
 		};
 
+		// initiate the request for the latest level this player has played
 		Backend.manager.GetCloudInts( new string[] { "lastLevelPlayed" }, onFetchedListFromServer );
 	}
 
+	// a way to report backend responses to the player in a friendly way
 	void LogToConsole( string msg, Color col ) {
 		responseLabel.color = col;
 		responseLabel.text = msg;
 
 		animator.SetTrigger( "Response Bounce" );
+	}
+
+	void ShowSpinner() {
+		if( spinner ) Destroy( spinner.gameObject );
+
+		spinner = Instantiate<Builder>( spinnerPrefab );
+		spinner.transform.SetParent( spinnerParent, false );
+		spinner.transform.localPosition = Vector3.zero;
 	}
 
 	public void CancelRegistration() {

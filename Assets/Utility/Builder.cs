@@ -7,4 +7,8 @@ public class Builder : MonoBehaviour {
 
 	public Animator animator;
 	public TextMeshProUGUI label;
+
+	void Start() {
+		animator.SetBool( "Toggle", true );
+	}
 }

@@ -5,18 +5,22 @@ using TMPro;
 
 public class ScoreLabel : MonoBehaviour
 {
-	public const int incompleteScore = 9999;
-
 	public TextMeshProUGUI label;
 	public int score { get; set; }
 
 	public void SetScore( int newScore ) {
 		score = newScore;
-		label.text = score.ToString();
+
+		if( score == StatTracker.maxLevelCompleteTime ) {
+			SetIncomplete();
+		}
+		else {
+			label.text = score.ToString();
+		}
 	}
 
 	public void SetIncomplete() {
-		score = incompleteScore;
+		score = StatTracker.maxLevelCompleteTime;
 		label.text = "-";
 	}
 }
