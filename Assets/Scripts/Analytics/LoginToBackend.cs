@@ -58,6 +58,7 @@ public class LoginToBackend : MonoBehaviour {
 			Backend.manager.displayName = response.DisplayName; // cache the user's display name for easy reference
 
 			LogToConsole( "Player " + response.DisplayName + " created!", successColor );
+			Backend.manager.lastLevelPlayed = 2;
 
 			// we just made a new player with no saved data, so just get started fresh
 			if( levelLoader ) levelLoader.Load( firstLevel );
